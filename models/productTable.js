@@ -3,7 +3,7 @@ import database from "../database/db";
 export const createProductsTable = ()=>{
     try {
         const querry = `
-           CREATE TABLE IF NOT EXISTS products(
+            CREATE TABLE IF NOT EXISTS products(
                 id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
                 name VARCHAR(100) NOT NULL,
                 description TEXT NOT NULL,
