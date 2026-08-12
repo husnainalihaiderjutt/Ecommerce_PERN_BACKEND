@@ -21,7 +21,10 @@ export const register = catchAsyncErrors(async(req,res,next)=>{
     if(isAlreadyRegistered.rows.length > 0){
         return next(new ErrorHandler("User Already registered with this email",400));
     }
-
+    if(password.length < 8)
+    {
+        return next(new ErrorHandler("Password must have at least 8 character",400))
+    }
     const hashPassword = await bcrypt.hash(password,10);
     const normalizedEmail = email.toLowerCase().trim();
     const user = await database.query(
@@ -32,6 +35,37 @@ export const register = catchAsyncErrors(async(req,res,next)=>{
 });
 
 
-export const login = catchAsyncErrors(async(req,res,next)=>{});
-export const getUser = catchAsyncErrors(async(req,res,next)=>{});
-export const logout = catchAsyncErrors(async(req,res,next)=>{});
+export const login = catchAsyncErrors(async(req,res,next)=>{
+    const {email,password} = req.body;
+    if(!email || !password){
+        return next(new ErrorHandler("Please provide email and password",400));
+    }
+    const user = await database.query(`SELECT * FROM users where email = $1`,
+        [email]
+    );
+    if(user.rows.length === 0){
+        return next(new ErrorHandler("Invalid email or password",401));
+    }
+    const isPasswordMatch = await bcrypt.compare(password,user.rows[0].password);
+    if(!isPasswordMatch){
+        return next(new ErrorHandler("Invalid email or password",401));
+    } 
+    sendToken(user.rows[0],201,"Login Successfully",res)
+});
+
+export const getUser = catchAsyncErrors(async(req,res,next)=>{
+    const {user} = req;
+    res.status(200).json({
+        success:true,
+        user
+    });
+});
+export const logout = catchAsyncErrors(async(req,res,next)=>{
+    res.status(200).cookie("token","",{
+        expires: new Date(Date.now()),
+        httpOnly:true
+    }).json({
+        success:true,
+        message:"Logged out Successfully"
+    });
+});
