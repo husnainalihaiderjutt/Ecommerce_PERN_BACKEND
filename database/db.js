@@ -1,3 +1,7 @@
+import { config } from "dotenv"
+config({path:"./config/config.env"});
+
+
 import pkg from "pg"
 const { Client } = pkg;
 

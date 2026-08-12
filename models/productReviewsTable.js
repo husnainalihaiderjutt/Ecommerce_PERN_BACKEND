@@ -1,6 +1,6 @@
 import database from "../database/db.js";
 
-export const productReviewTable = async()=>{
+export const createProductReviewTable = async()=>{
     try {
         const querry = `
                 CREATE TABLE IF NOT EXISTS reviews(
@@ -11,7 +11,7 @@ export const productReviewTable = async()=>{
                     comment TEXT NOT NULL,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY(product_id) REFERENCES products(id) ON DELETE CASCADE,
-                    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
+                    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
               );
         `;
         await database.query(querry);
