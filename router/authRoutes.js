@@ -1,5 +1,5 @@
 import express from "express";
-import { forgotPassword, register, resetPassword } from "../controllers/authController.js";
+import { forgotPassword, register, resetPassword, updatePassword } from "../controllers/authController.js";
 import { login } from "../controllers/authController.js";
 import { getUser } from "../controllers/authController.js";
 import { logout } from "../controllers/authController.js";
@@ -13,4 +13,5 @@ router.get("/me",isAuthenticated,getUser);
 router.get("/logout",isAuthenticated,logout);
 router.post("/password/forget",forgotPassword);
 router.put("/password/reset/:token",resetPassword);
+router.put("/password/update",isAuthenticated,updatePassword);
 export default router;
