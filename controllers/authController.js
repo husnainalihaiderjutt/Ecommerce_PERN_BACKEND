@@ -6,6 +6,7 @@ import { sendToken } from "../utils/jwtToken.js";
 import { generateResetPasswordToken } from "../utils/generateResetPasswordToken.js";
 import { generateEmailTemplate } from "../utils/generateForgetPasswordEmailTemplate.js";
 import { sendEmail } from "../utils/sendEmail.js";
+import crypto from "crypto"
 
 
 export const register = catchAsyncErrors(async(req,res,next)=>{
@@ -112,4 +113,33 @@ export const forgotPassword = catchAsyncErrors(async(req,res,next)=>{
         );
         return next(new ErrorHandler("Email could not be sent",500));
     };
+});
+
+export const resetPassword = catchAsyncErrors(async(req,res,next)=>{
+    const {token} = req.params;
+    const {password,confirmPassword} = req.body;
+    if(!password || !confirmPassword){
+       return next(new ErrorHandler("Please fill all the required fields",400))
+    }
+    const resetPasswordToken = crypto.createHash("sha256").update(token).digest("hex");
+    const user = await database.query(`
+        SELECT * FROM users WHERE reset_password_token = $1 AND reset_password_expire > NOW()`,
+        [resetPasswordToken]);
+    if(user.rows.length === 0){
+        return next(new ErrorHandler("Invalid or expired reset Token",400));
+    }
+    if(req.body.password !== req.body.confirmPassword){
+        return next(new ErrorHandler("Password do not match",400));
+    }
+    if(req.body.password.length < 8 || req.body.password.length > 16 || req.body.confirmPassword.length < 8 || req.body.confirmPassword.length > 16){
+        return next(new ErrorHandler("Password length must be between 8 and 16 character",400));
+    }
+    const hashPassword = await bcrypt.hash(req.body.password,10);
+
+    const updatedUser = await database.query(`
+            UPDATE users SET password = $1 , reset_password_token = NULL, reset_password_expire = NULL
+            WHERE id = $2 RETURNING *`,
+            [hashPassword,user.rows[0].id]
+        );
+    sendToken(updatedUser.rows[0],200,"Password reset successfully",res);
 });
