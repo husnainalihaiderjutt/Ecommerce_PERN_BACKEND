@@ -6,7 +6,6 @@ cloudinary.config({
     api_key:    process.env.CLOUDINARY_CLIENT_API,
     api_secret: process.env.CLOUDINARY_CLIENT_SECRET,
 })
-console.log(">>>>>>>>",process.env.CLOUDINARY_CLIENT_NAME,process.env.CLOUDINARY_CLIENT_API,process.env.CLOUDINARY_CLIENT_SECRET)
 
 app.listen(process.env.PORT,()=>{
     console.log(`Server is running on the port ${process.env.PORT}`)
