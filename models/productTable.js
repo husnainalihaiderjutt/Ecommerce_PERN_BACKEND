@@ -7,7 +7,7 @@ export const createProductsTable =async()=>{
                 id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
                 name VARCHAR(100) NOT NULL,
                 description TEXT NOT NULL,
-                price DECIMAL(10,2) NOT NULL CHECK (price>=0),
+                price DECIMAL(7,2) NOT NULL CHECK (price>=0),
                 category VARCHAR(255) NOT NULL,
                 ratings DECIMAL(3,2) DEFAULT 0 CHECK (ratings BETWEEN 0 AND 5),
                 images JSONB DEFAULT '[]'::JSONB,
