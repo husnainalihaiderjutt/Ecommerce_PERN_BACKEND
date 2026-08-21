@@ -317,3 +317,30 @@ export const postProductReview = catchAsyncErrors(async(req,res,next)=>{
       product:updateProduct.rows[0]
     });
 });
+
+export const deleteReview = catchAsyncErrors(async(req,res,next)=>{
+    const {productId} = req.params;
+    const review = await database.query(`
+      DELETE FROM reviews WHERE product_id = $1 AND user_id = $2 RETURNING *`
+      ,[productId,req.user.id]
+    );
+    if(review.rows.length === 0){
+      return next(new ErrorHandler("Review not found",404));
+    }
+    const allReviews = await database.query(`
+       SELECT AVG(ratings) AS avg_rating FROM reviews WHERE productId = $1`,
+       [productId]
+    );
+    const newAVGRating = allReviews.rows[0].avg_rating;
+
+    const updateProduct = await database.query(`
+       UPDATE products SET ratings = $1 WHERE id = $2 RETURNING *`,
+       [newAVGRating,productId]
+    );
+    res.status(200).json({
+      success: true,
+      message:"Your Review has been deleted Successfully",
+      review: review.rows[0],
+      product: updateProduct.rows[0],
+    });
+});
