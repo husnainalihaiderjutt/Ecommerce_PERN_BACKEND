@@ -6,7 +6,7 @@ node_modules/
 .env.local
 .env.development
 .env.production
-
+config/config.env
 # Logs
 logs/
 *.log
