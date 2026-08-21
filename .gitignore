@@ -2,11 +2,12 @@
 node_modules/
 
 # Environment variables
+config.env
 .env
 .env.local
 .env.development
 .env.production
-config/config.env
+
 # Logs
 logs/
 *.log
