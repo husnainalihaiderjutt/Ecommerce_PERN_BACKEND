@@ -1,5 +1,3 @@
-/** @format */
-
 import database from "../database/db.js";
 import { catchAsyncErrors } from "../middlewares/catchAsyncError.js";
 import ErrorHandler from "../middlewares/errorMiddleware.js";
@@ -246,8 +244,12 @@ export const fetchSingleProduct = catchAsyncErrors(async (req, res, next) => {
 export const postProductReview = catchAsyncErrors(async(req,res,next)=>{
    const {productId} = req.params;
    const {rating , comment} = req.body;
-   if(!rating || ! comment){
-    return next(new ErrorHandler("Please prodvide rating and comment",400));
+   if (!rating || !comment) {
+    return next(new ErrorHandler("Please provide rating and comment", 400));
+   }
+
+   if (rating < 1 || rating > 5) {
+      return next(new ErrorHandler("Rating must be between 1 and 5", 400));
    }
 
    const purchaseCheckQuerry = `
@@ -260,4 +262,58 @@ export const postProductReview = catchAsyncErrors(async(req,res,next)=>{
        AND p.payment_status = 'Paid'
        LIMIT 1
    `;
+   const {rows} = await database.query(
+    purchaseCheckQuerry,
+    [req.user.id , productId]
+    );
+    if (rows.length === 0) {
+    return res.status(403).json({
+        success: false,
+        message: "You can only review products you have purchased"
+    });
+    }
+     
+    const product = await database.query(`SELECT * FROM products WHERE id = $1`,
+        [productId]
+    );
+
+    if(product.rows.length === 0){
+       return next(new ErrorHandler("Product not found",404));
+    }
+
+    const isAlreadyReview = await database.query(`
+      SELECT * FROM reviews WHERE product_id = $1 AND user_id = $2
+      `,[productId,req.user.id]);
+    
+    let review;
+    if(isAlreadyReview.rows.length > 0){
+      review = await database.query(`
+        UPDATE reviews SET ratings = $1 , comment = $1 WHERE product_id = $3 AND user_id = $4 RETURNING *`,
+        [rating , comment , productId , req.user.id]
+      );
+    }
+    else{
+      review = await database.query(`
+        INSERT INTO reviews(product_id , user_id , ratings , comment)
+        VALUES ($1 , $2 , $3 ,$4 ) RETURNING *`,
+        [productId , req.user.id , rating , comment]
+      );
+    }
+
+    const allReviews = await database.query(`
+       SELECT AVG(ratings) AS avg_rating FROM reviews WHERE productId = $1`,
+       [productId]
+    );
+    const newAVGRating = allReviews.rows[0].avg_rating;
+
+    const updateProduct = await database.query(`
+       UPDATE products SET ratings = $1 WHERE id = $2 RETURNING *`,
+       [newAVGRating,productId]
+    );
+    res.status(200).json({
+      success: true,
+      message: "Reviews posted Successfully",
+      review: review.rows[0],
+      product:updateProduct.rows[0]
+    });
 });
